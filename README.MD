@@ -1,6 +1,6 @@
-## Скачать клиент
+## Скачать программу
 
- - https://drive.google.com/open?id=1j2LOzurlM9oH3UXswOWnwgMZp_rzA7d9
+ - https://drive.google.com/open?id=1KppKF-fbHtCTplcc2MLi78nIcJjSNCtn
  
 ## Требования
 
