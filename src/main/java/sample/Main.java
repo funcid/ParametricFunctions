@@ -1,9 +1,11 @@
 package sample;
 
+import groovy.lang.GroovyShell;
 import javafx.application.Application;
 import javafx.geometry.Point3D;
 import javafx.scene.*;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -31,6 +33,7 @@ public strictfp class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         Group group = new Group();
+
         Camera camera = new PerspectiveCamera(true);
         camera.setFarClip(500000);
 
@@ -49,23 +52,25 @@ public strictfp class Main extends Application {
         z.setRotate(90);
         z.setMaterial(createMaterial(Color.GREEN));
 
-        int count = 4000;
+        int count = 2000;
         int r = 200;
         int length = 150;
 
         Point3D previous = null;
         Cylinder[] lines = new Cylinder[count - 1];
 
-        for (int p = 0; p < count; p++) {
-            double t = Math.toRadians(p);
-            double f = Math.exp(Math.cos(t)) - 2 * Math.cos(4 * t) + Math.pow(Math.sin(t / 12), 5);
+        GroovyShell shell = createMathShell();
+
+        for (double p = 0; p < count; p++) {
+            shell.setVariable("alpha", Math.toRadians(p));
+            shell.setVariable("x", p);
             Point3D now = new Point3D(
-                    sin(t) * f * r,
-                    -cos(t) * f * r,
-                    t
+                    (double) shell.evaluate(getParameters().getUnnamed().get(0)) * r,
+                    (double) shell.evaluate(getParameters().getUnnamed().get(1)) * -r,
+                    (double) shell.evaluate(getParameters().getUnnamed().get(2)) * r
             );
             if (p > 0)
-                lines[p - 1] = createConnection(previous, now);
+                lines[(int) p - 1] = createConnection(previous, now);
             previous = now;
         }
 
@@ -174,6 +179,18 @@ public strictfp class Main extends Application {
             }
         }
         return numbers;
+    }
+
+    private static GroovyShell createMathShell() {
+        GroovyShell shell = new GroovyShell();
+
+        shell.evaluate("" +
+                "cos = {double alpha -> Math.cos(alpha)}\n" +
+                "sin = {double alpha -> Math.sin(alpha)}\n" +
+                "exp = {double alpha -> Math.exp(alpha)}\n" +
+                "pi = Math.PI\n"
+        );
+        return shell;
     }
 
     public static void main(String[] args) {
