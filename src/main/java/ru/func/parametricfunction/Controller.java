@@ -1,9 +1,13 @@
-package sample;
+package ru.func.parametricfunction;
 
 import groovy.lang.GroovyShell;
-import javafx.application.Application;
+import javafx.fxml.FXML;
 import javafx.geometry.Point3D;
-import javafx.scene.*;
+import javafx.scene.Camera;
+import javafx.scene.Group;
+import javafx.scene.PerspectiveCamera;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -25,13 +29,30 @@ import static java.lang.Math.sin;
 /**
  * @author func 12.12.2019
  */
-public strictfp class Main extends Application {
+public class Controller {
+
+    @FXML
+    private TextField inputX;
+
+    @FXML
+    private TextField inputY;
+
+    @FXML
+    private TextField inputZ;
+
+    @FXML
+    private Button next;
+
+    private Stage stage;
+
+    void setStage(Stage stage) {
+        this.stage = stage;
+    }
 
     private Font font = Font.font(24);
     private PhongMaterial black = createMaterial(Color.BLACK);
 
-    @Override
-    public void start(Stage primaryStage) {
+    private void loadGraph() {
         Group group = new Group();
 
         Camera camera = new PerspectiveCamera(true);
@@ -52,9 +73,7 @@ public strictfp class Main extends Application {
         z.setRotate(90);
         z.setMaterial(createMaterial(Color.GREEN));
 
-        int count = 2000;
-        int r = 200;
-        int length = 150;
+        int count = 2000, r = 200, length = 150;
 
         Point3D previous = null;
         Cylinder[] lines = new Cylinder[count - 1];
@@ -62,12 +81,11 @@ public strictfp class Main extends Application {
         GroovyShell shell = createMathShell();
 
         for (double p = 0; p < count; p++) {
-            shell.setVariable("alpha", Math.toRadians(p));
             shell.setVariable("x", p);
             Point3D now = new Point3D(
-                    (double) shell.evaluate(getParameters().getUnnamed().get(0)) * r,
-                    (double) shell.evaluate(getParameters().getUnnamed().get(1)) * -r,
-                    (double) shell.evaluate(getParameters().getUnnamed().get(2)) * r
+                    (double) shell.evaluate(inputX.getText()) * r,
+                    (double) shell.evaluate(inputY.getText()) * -r,
+                    (double) shell.evaluate(inputZ.getText()) * r
             );
             if (p > 0)
                 lines[(int) p - 1] = createConnection(previous, now);
@@ -87,18 +105,14 @@ public strictfp class Main extends Application {
         Scene scene = new Scene(group, 1000, 1000);
         scene.setCamera(camera);
 
-        primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+        stage.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
-            double y = camera.getScaleY();
-            double p = camera.getScaleZ();
-            double k = 100;
+            double y = camera.getScaleY(), p = camera.getScaleZ(), k = 100;
 
             double xzLength = cos(p) * k;
             double dx = xzLength * sin(y) * (camera.getRotate() % 360 >= 90 && camera.getRotate() % 360 <= 270 ? -1 : 1);
             double dz = xzLength * cos(y) * (camera.getRotate() % 360 >= 90 && camera.getRotate() % 360 <= 270 ? -1 : 1);
             double dy = k * sin(p);
-
-            System.out.println(camera.getRotate());
 
             switch (event.getCode()) {
                 case W:
@@ -122,19 +136,21 @@ public strictfp class Main extends Application {
             }
         });
 
-        primaryStage.addEventHandler(MouseEvent.MOUSE_MOVED, event -> {
-            Tooltip t = new Tooltip("X: " + event.getX()/200 + "; Y: " + -event.getY()/200);
+        stage.addEventHandler(MouseEvent.MOUSE_MOVED, event -> {
+            Tooltip t = new Tooltip("X: " + event.getX()/r + "; Y: " + -event.getY()/r);
             Tooltip.install(rect, t);
         });
 
-        primaryStage.addEventHandler(ScrollEvent.SCROLL, event -> {
+        stage.addEventHandler(ScrollEvent.SCROLL, event -> {
             double delta = event.getDeltaY();
             camera.translateZProperty().set(camera.getTranslateZ() + delta);
             camera.translateXProperty().set(camera.getTranslateX() + (camera.getRotate() > 180 ? -event.getX() / 25 : event.getX() / 25));
             camera.translateYProperty().set(camera.getTranslateY() + (camera.getRotate() > 180 ? -event.getY() / 25 : event.getY() / 25));
         });
-        primaryStage.setScene(scene);
-        primaryStage.show();
+
+        stage.setResizable(true);
+        stage.setScene(scene);
+        stage.show();
     }
 
     private PhongMaterial createMaterial(Color color) {
@@ -164,7 +180,7 @@ public strictfp class Main extends Application {
         for (int i = -length/2; i < length/2; i++) {
             numbers[i+length/2] = new TextArea(-i + "");
             numbers[i+length/2].translateXProperty().set(-i*radius*XProperty);
-            numbers[i+length/2].translateYProperty().set(i*radius*YProperty);
+            numbers[i+length/2].translateYProperty().set(i*radius*YProperty - radius/2);
             numbers[i+length/2].translateZProperty().set(i*radius*ZProperty);
             numbers[i+length/2].setMaxWidth(radius);
             numbers[i+length/2].setMaxHeight(radius);
@@ -173,7 +189,6 @@ public strictfp class Main extends Application {
             numbers[i+length/2].setMouseTransparent(true);
             numbers[i+length/2].setFocusTraversable(false);
             if (normal) {
-                numbers[i+length/2].translateYProperty().set(-50);
                 numbers[i+length/2].setRotationAxis(Rotate.X_AXIS);
                 numbers[i+length/2].setRotate(270);
             }
@@ -181,19 +196,24 @@ public strictfp class Main extends Application {
         return numbers;
     }
 
-    private static GroovyShell createMathShell() {
+    private GroovyShell createMathShell() {
         GroovyShell shell = new GroovyShell();
 
         shell.evaluate("" +
-                "cos = {double alpha -> Math.cos(alpha)}\n" +
-                "sin = {double alpha -> Math.sin(alpha)}\n" +
-                "exp = {double alpha -> Math.exp(alpha)}\n" +
+                "cos = {double x -> Math.cos(Math.toRadians(x))}\n" +
+                "sin = {double x -> Math.sin(Math.toRadians(x))}\n" +
+                "exp = {double x -> Math.exp(Math.toRadians(x))}\n" +
                 "pi = Math.PI\n"
         );
         return shell;
     }
 
-    public static void main(String[] args) {
-        launch(args);
+    @FXML
+    void initialize() {
+        next.setOnAction(event -> {
+            if (inputX.getText().isEmpty() || inputY.getText().isEmpty() || inputZ.getText().isEmpty())
+                return;
+            loadGraph();
+        });
     }
 }
