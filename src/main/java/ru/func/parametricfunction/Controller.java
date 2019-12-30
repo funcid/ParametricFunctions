@@ -180,7 +180,7 @@ public class Controller {
         for (int i = -length/2; i < length/2; i++) {
             numbers[i+length/2] = new TextArea(-i + "");
             numbers[i+length/2].translateXProperty().set(-i*radius*XProperty);
-            numbers[i+length/2].translateYProperty().set(i*radius*YProperty - radius/2);
+            numbers[i+length/2].translateYProperty().set(i*radius*YProperty);
             numbers[i+length/2].translateZProperty().set(i*radius*ZProperty);
             numbers[i+length/2].setMaxWidth(radius);
             numbers[i+length/2].setMaxHeight(radius);
@@ -189,6 +189,7 @@ public class Controller {
             numbers[i+length/2].setMouseTransparent(true);
             numbers[i+length/2].setFocusTraversable(false);
             if (normal) {
+                numbers[i+length/2].translateYProperty().set(i*radius*YProperty-radius/2);
                 numbers[i+length/2].setRotationAxis(Rotate.X_AXIS);
                 numbers[i+length/2].setRotate(270);
             }
